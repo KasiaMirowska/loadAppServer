@@ -1,0 +1,42 @@
+service: expense-tracker-api
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  region: us-east-1
+  environment:
+    S3_BUCKET: km-expense-tracker-receipts
+
+functions:
+  trackerExpressApi:
+    handler: handler.handler
+    events:
+      - http:
+          path: tracker-express-api
+          method: any  # Handles any HTTP method
+      - http:
+          path: generate-presigned-url
+          method: get
+    timeout: 30  # Adjust timeout if necessary
+
+resources:
+  Resources:
+    LambdaExecutionRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action: sts:AssumeRole
+              Principal:
+                Service: lambda.amazonaws.com
+        Policies:
+          - PolicyName: S3UploadPolicy
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action: s3:PutObject
+                  Resource: arn:aws:s3:::km-expense-tracker-receipts/uploads/*
+
