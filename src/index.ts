@@ -13,6 +13,7 @@ app.use(cors())
 const s3 = new S3Client({ region: 'us-east-1' })
 
 app.get('/', (req, res) => {
+  console.log('HERE IN THE FIRST GET')
   res.send({ message: 'Hello from our server!' })
 
   //mocked long response:
@@ -30,10 +31,11 @@ app.get('/', (req, res) => {
 app.get('/generate-presigned-url', async (req, res) => {
   const { fileName, fileType } = req.query
   // Set up the parameters for the pre-signed URL
+  const contentType = typeof fileType === 'string' ? fileType : undefined
   const params = {
     Bucket: 'km-expense-tracker-receipts',
     Key: `uploads/${Date.now()}_${fileName}`,
-    ContentType: fileType,
+    ContentType: contentType,
   }
   console.log('Pre-signing Params:', JSON.stringify(params))
 
@@ -50,4 +52,9 @@ app.get('/generate-presigned-url', async (req, res) => {
   }
 })
 
-export const handler = serverless(app)
+export const handler = async (event:any, context:any) => {
+    console.log('Lambda is invoked')
+  console.log('Event:', JSON.stringify(event, null, 2)) // Log the event to CloudWatch
+  return serverless(app)(event, context)
+}
+//export const handler = serverless(app)

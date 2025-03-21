@@ -1,23 +1,25 @@
-service: expense-tracker-api
+service: km
 
 provider:
   name: aws
-  runtime: nodejs14.x
+  runtime: nodejs18.x
   region: us-east-1
   environment:
     S3_BUCKET: km-expense-tracker-receipts
+  httpApi: 
+    cors: true
 
 functions:
   trackerExpressApi:
-    handler: handler.handler
+    handler: dist/index.handler
     events:
-      - http:
-          path: tracker-express-api
-          method: any  # Handles any HTTP method
-      - http:
-          path: generate-presigned-url
+      - httpApi:
+          path: /
           method: get
-    timeout: 30  # Adjust timeout if necessary
+      - httpApi:
+          path: /generate-presigned-url
+          method: get
+    timeout: 29
 
 resources:
   Resources:
@@ -28,7 +30,8 @@ resources:
           Version: "2012-10-17"
           Statement:
             - Effect: Allow
-              Action: sts:AssumeRole
+              Action:
+                - sts:AssumeRole
               Principal:
                 Service: lambda.amazonaws.com
         Policies:
@@ -37,6 +40,17 @@ resources:
               Version: "2012-10-17"
               Statement:
                 - Effect: Allow
-                  Action: s3:PutObject
-                  Resource: arn:aws:s3:::km-expense-tracker-receipts/uploads/*
-
+                  Action: 
+                    - logs:CreateLogGroup
+                    - logs:CreateLogStream
+                    - logs:PutLogEvents
+                  Resource: arn:aws:logs:*:*:*
+                - Effect: Allow
+                  Action: 
+                    - s3:PutObject
+                    - s3:GetObject
+                    - s3:ListBucket
+                    - s3:PutObjectAcl
+                  Resource: 
+                    - arn:aws:s3:::km-expense-tracker-receipts
+                    - arn:aws:s3:::km-expense-tracker-receipts/uploads/*
